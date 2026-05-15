@@ -147,8 +147,17 @@
 
 <script>
     // 초기 데이터 설정 (기존 정보가 있으면 가져옴)
-    let profile = JSON.parse(localStorage.getItem('myLinkProfile')) || { name: '이름을 적어주세요', bio: '자기소개를 입력해주세요.', img: '' };
-    let links = JSON.parse(localStorage.getItem('myLinkItems')) || [];
+    // 초기 데이터에 본인의 실제 정보를 미리 넣어두기
+let profile = { 
+    name: '김수형', 
+    bio: '한양대학교 컴퓨터소프트웨어학부 22학번', 
+    img: '스크린샷 2026-05-15 165910.png' 
+};
+
+let links = [
+    { id: 1, title: 'GitHub', url: 'https://github.com/watershape02', color: 'bg-blue' },
+    { id: 2, title: 'Naver Blog', url: 'https://blog.naver.com/water_shape', color: 'bg-green' }
+];
     let currentEditLinkId = null;
 
     function init() {
