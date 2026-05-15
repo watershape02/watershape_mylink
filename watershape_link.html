@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My LinkHub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-white: #ffffff;
+            --pastel-blue: #D6E4FF;
+            --pastel-green: #D1FAE5;
+            --pastel-yellow: #FEF3C7;
+            --pastel-red: #FEE2E2;
+            --pastel-purple: #EDE9FE;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-white);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 450px;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        /* 프로필 섹션 */
+        .profile-section {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .profile-img-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 15px;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #f3f4f6;
+            border: 2px dashed #d1d5db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        #profileDisplayImg { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* 이름 및 자기소개 표시/입력 영역 */
+        .info-display h1 { font-size: 24px; margin: 10px 0 5px; }
+        .info-display p { color: #6b7280; margin-bottom: 15px; }
+        
+        .info-edit { display: none; margin-bottom: 20px; }
+        .info-edit input, .info-edit textarea {
+            width: 100%; padding: 10px; margin-bottom: 8px;
+            border: 1px solid #e5e7eb; border-radius: 8px; box-sizing: border-box;
+            text-align: center; font-family: inherit;
+        }
+
+        .edit-toggle-btn {
+            font-size: 13px; padding: 6px 16px; border-radius: 20px;
+            border: 1px solid #e5e7eb; background: white; cursor: pointer; transition: 0.2s;
+        }
+        .edit-toggle-btn:hover { background: #f9fafb; border-color: #d1d5db; }
+
+        /* 링크 버튼 스타일 */
+        .link-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .link-card {
+            padding: 18px; border-radius: 16px; text-decoration: none;
+            color: #374151; font-weight: 600; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        }
+
+        .bg-blue { background-color: var(--pastel-blue); }
+        .bg-green { background-color: var(--pastel-green); }
+        .bg-yellow { background-color: var(--pastel-yellow); }
+        .bg-red { background-color: var(--pastel-red); }
+        .bg-purple { background-color: var(--pastel-purple); }
+
+        .btn-group button { background: none; border: none; cursor: pointer; color: #9ca3af; margin-left: 8px; }
+
+        /* 모달 (링크 추가용) */
+        .modal {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; padding: 25px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            z-index: 1000; width: 85%; max-width: 350px;
+        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 999; }
+        .save-btn { width: 100%; padding: 12px; background: #374151; color: white; border: none; border-radius: 8px; margin-top: 10px; cursor: pointer; }
+        
+        .add-link-btn {
+            margin-top: 30px; width: 50px; height: 50px; border-radius: 25px;
+            background: #374151; color: white; border: none; font-size: 24px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="profile-section">
+        <div class="profile-img-container" onclick="document.getElementById('imgInput').click()">
+            <img id="profileDisplayImg" src="" style="display:none;">
+            <span id="imgPlaceholder"><i class="fa-solid fa-camera"></i></span>
+        </div>
+        <input type="file" id="imgInput" hidden accept="image/*" onchange="handleImgUpload(event)">
+        
+        <div id="infoDisplay" class="info-display">
+            <h1 id="displayName">이름</h1>
+            <p id="displayBio">자기소개를 입력하세요.</p>
+            <button class="edit-toggle-btn" onclick="toggleEditMode(true)">프로필 편집</button>
+        </div>
+
+        <div id="infoEdit" class="info-edit">
+            <input type="text" id="editName" placeholder="이름 입력">
+            <textarea id="editBio" placeholder="자기소개 입력" rows="2"></textarea>
+            <button class="edit-toggle-btn" style="background: #374151; color: white;" onclick="saveProfile()">저장</button>
+            <button class="edit-toggle-btn" onclick="toggleEditMode(false)">취소</button>
+        </div>
+    </div>
+
+    <div id="linkContainer" class="link-list"></div>
+    <button class="add-link-btn" onclick="openLinkModal()"><i class="fa-solid fa-plus"></i></button>
+</div>
+
+<div id="linkOverlay" class="modal-overlay" onclick="closeModals()"></div>
+<div id="linkModal" class="modal">
+    <h3 id="linkModalTitle">링크 추가</h3>
+    <input type="text" id="linkTitle" placeholder="제목 (예: 블로그)" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;">
+    <input type="text" id="linkUrl" placeholder="URL (https://...)" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;">
+    <select id="linkColor" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px;">
+        <option value="bg-blue">파랑</option>
+        <option value="bg-green">초록</option>
+        <option value="bg-yellow">노랑</option>
+        <option value="bg-red">빨강</option>
+        <option value="bg-purple">보라</option>
+    </select>
+    <button class="save-btn" onclick="saveLink()">저장하기</button>
+</div>
+
+<script>
+    // 초기 데이터 설정 (기존 정보가 있으면 가져옴)
+    let profile = JSON.parse(localStorage.getItem('myLinkProfile')) || { name: '이름을 적어주세요', bio: '자기소개를 입력해주세요.', img: '' };
+    let links = JSON.parse(localStorage.getItem('myLinkItems')) || [];
+    let currentEditLinkId = null;
+
+    function init() {
+        renderProfile();
+        renderLinks();
+    }
+
+    // 모드 전환 함수
+    function toggleEditMode(isEdit) {
+        document.getElementById('infoDisplay').style.display = isEdit ? 'none' : 'block';
+        document.getElementById('infoEdit').style.display = isEdit ? 'block' : 'none';
+        if(isEdit) {
+            document.getElementById('editName').value = profile.name;
+            document.getElementById('editBio').value = profile.bio;
+        }
+    }
+
+    function renderProfile() {
+        document.getElementById('displayName').innerText = profile.name;
+        document.getElementById('displayBio').innerText = profile.bio;
+        if(profile.img) {
+            document.getElementById('profileDisplayImg').src = profile.img;
+            document.getElementById('profileDisplayImg').style.display = 'block';
+            document.getElementById('imgPlaceholder').style.display = 'none';
+        }
+        localStorage.setItem('myLinkProfile', JSON.stringify(profile));
+    }
+
+    function saveProfile() {
+        profile.name = document.getElementById('editName').value;
+        profile.bio = document.getElementById('editBio').value;
+        renderProfile();
+        toggleEditMode(false);
+    }
+
+    function handleImgUpload(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            profile.img = reader.result;
+            renderProfile();
+        };
+        if(file) reader.readAsDataURL(file);
+    }
+
+    // 링크 관리 로직 (기존과 동일)
+    function renderLinks() {
+        const container = document.getElementById('linkContainer');
+        container.innerHTML = '';
+        links.forEach(link => {
+            const div = document.createElement('div');
+            div.className = `link-card ${link.color}`;
+            div.innerHTML = `
+                <a href="${link.url}" target="_blank" style="text-decoration:none; color:inherit; flex-grow:1;">${link.title}</a>
+                <div class="btn-group">
+                    <button onclick="editLink(${link.id})"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteLink(${link.id})"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        localStorage.setItem('myLinkItems', JSON.stringify(links));
+    }
+
+    function openLinkModal() {
+        currentEditLinkId = null;
+        document.getElementById('linkModalTitle').innerText = "링크 추가";
+        document.getElementById('linkTitle').value = '';
+        document.getElementById('linkUrl').value = '';
+        document.getElementById('linkModal').style.display = 'block';
+        document.getElementById('linkOverlay').style.display = 'block';
+    }
+
+    function saveLink() {
+        const title = document.getElementById('linkTitle').value;
+        const url = document.getElementById('linkUrl').value;
+        const color = document.getElementById('linkColor').value;
+        if(currentEditLinkId) {
+            links = links.map(l => l.id === currentEditLinkId ? { ...l, title, url, color } : l);
+        } else {
+            links.push({ id: Date.now(), title, url, color });
+        }
+        renderLinks();
+        closeModals();
+    }
+
+    function editLink(id) {
+        const link = links.find(l => l.id === id);
+        currentEditLinkId = id;
+        document.getElementById('linkModalTitle').innerText = "링크 수정";
+        document.getElementById('linkTitle').value = link.title;
+        document.getElementById('linkUrl').value = link.url;
+        document.getElementById('linkColor').value = link.color;
+        document.getElementById('linkModal').style.display = 'block';
+        document.getElementById('linkOverlay').style.display = 'block';
+    }
+
+    function deleteLink(id) {
+        if(confirm("링크를 삭제하시겠습니까?")) {
+            links = links.filter(l => l.id !== id);
+            renderLinks();
+        }
+    }
+
+    function closeModals() {
+        document.getElementById('linkModal').style.display = 'none';
+        document.getElementById('linkOverlay').style.display = 'none';
+    }
+
+    init();
+</script>
+</body>
+</html>
